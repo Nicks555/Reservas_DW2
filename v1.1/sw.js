@@ -2,29 +2,27 @@ const CACHE_NAME = 'cyberzone-v1';
 const urlsToCache = [
   './',
   './index.html',
+  './manifest.json',
   'https://code.jquery.com/jquery-3.7.1.min.js',
-  'https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap',
+  'https://cdn-icons-png.flaticon.com/512/2933/2933253.png'
 ];
 
-// Instalar el Service Worker y guardar los archivos en caché
+// Instalar el Service Worker
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// Interceptar peticiones para servir desde caché si no hay internet
+// Interceptar peticiones (funcionamiento offline)
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response; // Devuelve el archivo guardado en caché
-        }
-        return fetch(event.request); // Si no está en caché, lo busca en internet
+        if (response) return response;
+        return fetch(event.request);
       })
   );
 });

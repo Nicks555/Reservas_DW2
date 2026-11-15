@@ -1,0 +1,18 @@
+{
+  "name": "CyberZone Café",
+  "short_name": "CyberZone",
+  "description": "Reserva tu estación de juegos favorita en CyberZone Café",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#07080d",
+  "theme_color": "#00f0ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "Logo Cib.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

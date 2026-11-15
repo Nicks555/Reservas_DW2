@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CyberZone Café | Reservas</title>
 
+  <!-- NUEVO: Enlace al Manifest para PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00f0ff">
+
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933253.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -218,6 +222,18 @@
     .toast.error .toast-icon { background: var(--red); }
     .toast.error .toast-content strong { color: var(--red); }
 
+    /* BOTÓN FLOTANTE DE INSTALACIÓN PWA */
+    #btnInstallApp {
+      display: none; /* Se muestra por JS cuando el navegador lo permite */
+      position: fixed; bottom: 20px; right: 20px; z-index: 1500;
+      background: var(--cyan); color: #000; border: none; padding: 12px 20px;
+      border-radius: 30px; font-weight: 800; font-size: 1rem;
+      box-shadow: 0 0 20px rgba(0,240,255,0.6); align-items: center; gap: 10px;
+      animation: float 3s ease-in-out infinite;
+    }
+    #btnInstallApp:hover { background: #fff; box-shadow: 0 0 30px rgba(0,240,255,1); }
+    @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+
     /* =========================================
        RESPONSIVE (MÓVILES Y TABLETS)
        ========================================= */
@@ -279,6 +295,7 @@
       .carousel-arrow.is-hidden { opacity: 0; pointer-events: none; }
 
       #modalBitacora .modal-box { max-height: 80dvh; width: 95%; max-width: 400px; }
+      #btnInstallApp { bottom: 15px; right: 15px; padding: 10px 15px; font-size: 0.9rem; }
     }
 
     /* Tablets: 3 columnas por página */
@@ -333,7 +350,8 @@
       <a href="#" class="menu-link" data-section="inicio">🏠 Inicio</a>
       <a href="#" class="menu-link" data-section="catalogo">🛒 Catálogo</a>
       <a href="#" id="menuOpenBitacora">📋 Ver Bitácora</a>
-      <a href="#" class="btn-download" id="btnInstallPWA">📲 Descargar App</a>
+      <!-- El botón de descarga del menú ahora llama a la misma función que el flotante -->
+      <a href="#" class="btn-download" id="btnInstallPWA_menu">📲 Descargar App</a>
     </nav>
 
     <div class="nav-right">
@@ -494,7 +512,73 @@
     </div>
   </div>
 
+  <!-- BOTÓN FLOTANTE DE INSTALACIÓN PWA -->
+  <button id="btnInstallApp">📲 Instalar App</button>
+
   <script>
+    // ==========================================
+    // LÓGICA PWA (INSTALACIÓN DESDE LA PÁGINA)
+    // ==========================================
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Mostrar los botones de instalación (el flotante y el del menú)
+      $('#btnInstallApp').css('display', 'flex');
+      $('#btnInstallPWA_menu').show();
+    });
+
+    // Función para lanzar la instalación
+    function instalarApp(e) {
+      if (e) e.preventDefault();
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('Usuario aceptó la instalación');
+            $('#btnInstallApp').hide();
+            $('#btnInstallPWA_menu').hide();
+          } else {
+            console.log('Usuario rechazó la instalación');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        // Si no está disponible el prompt (ej. ya está instalada o no es compatible)
+        alert("Para instalar la app, abre esta página en Chrome desde tu celular y selecciona 'Agregar a la pantalla de inicio'.");
+      }
+    }
+
+    // Asignar el evento a ambos botones
+    $('#btnInstallApp').on('click', instalarApp);
+    $('#btnInstallPWA_menu').on('click', instalarApp);
+
+    // Ocultar el botón flotante si ya está instalada (modo standalone)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      $('#btnInstallApp').hide();
+      $('#btnInstallPWA_menu').hide();
+    }
+
+    // ==========================================
+    // REGISTRO DEL SERVICE WORKER
+    // ==========================================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(registration => {
+            console.log('Service Worker registrado con éxito:', registration.scope);
+          })
+          .catch(error => {
+            console.log('Error al registrar el Service Worker:', error);
+          });
+      });
+    }
+
+    // ==========================================
+    // LÓGICA DE LA APLICACIÓN (JQUERY)
+    // ==========================================
     $(document).ready(function() {
 
       const db = {
@@ -546,28 +630,6 @@
       let currentGenre = 'all';
       let modalTimerInterval = null;
       let tiempoRestante = 60;
-
-      // PWA
-      let deferredPrompt;
-      const btnInstallPWA = document.getElementById('btnInstallPWA');
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        $(btnInstallPWA).show();
-      });
-      $(btnInstallPWA).on('click', async function(e) {
-        e.preventDefault();
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') mostrarToast("App Instalada", "CyberZone Café se ha instalado.", false);
-          deferredPrompt = null;
-          $(this).hide();
-        } else {
-          alert("Abre esta página en Chrome desde tu celular y selecciona 'Agregar a la pantalla de inicio'.");
-        }
-        $('#mobileMenu').removeClass('active');
-      });
 
       // ACTUALIZACIÓN DE TIMERS (cada segundo)
       setInterval(() => {
@@ -907,7 +969,6 @@
         let necesitaRenderMaquinas = false;
 
         reservas.forEach(res => {
-          // Clase (no id): el mismo timer existe en la bitácora de escritorio y en la del modal móvil
           const $timer = $(`.timer-${res.id}`);
           if($timer.length > 0) {
             if(ahora < res.startDate) {

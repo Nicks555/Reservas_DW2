@@ -79,8 +79,8 @@ $(document).ready(function() {
   ];
 
   // Cliente Supabase para Auth (los eventos NO se guardan en Supabase, solo en eventos.json)
-  const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
-  const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+  const SUPABASE_URL = 'https://awnsrfhwvmnzauekxevg.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Q0GZxsl-iNK25mEF2ZODBQ_INEWa-PU';
   const supabaseClient = (window.supabase && SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('TU-PROYECTO') && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY')
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
